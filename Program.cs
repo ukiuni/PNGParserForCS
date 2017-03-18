@@ -21,8 +21,8 @@ namespace PNGParser
     class SizeParser
     {
         public static readonly byte[] DATA_PNG_FILE_SIGNATURE = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
-        public static readonly int LENGTH_PNG_FILE_SIGNATURE = DATA_PNG_FILE_SIGNATURE.Length;
-        public static readonly int LENGTH_IHDR = 25;
+        public const int LENGTH_PNG_FILE_SIGNATURE = 8;
+        public const int LENGTH_IHDR = 25;
         public static readonly byte[] DATA_IHDR_CUNK_TYPE = new byte[] { (byte)'I', (byte)'H', (byte)'D', (byte)'R' };
         public const int LENGTH_INTEGER_PER_BYTE = 4;
         static void Main(string[] args)
