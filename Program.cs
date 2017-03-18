@@ -23,10 +23,11 @@ namespace PNGParser
         public static readonly byte[] DATA_PNG_FILE_SIGNATURE = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
         public static readonly int LENGTH_PNG_FILE_SIGNATURE = DATA_PNG_FILE_SIGNATURE.Length;
         public static readonly int LENGTH_IHDR = 25;
-        public static readonly byte[] DATA_IHDR_CUNK_TYPE = new byte[] { (byte)'I', (byte)'H', (byte)'D', (byte)'R', };
+        public static readonly byte[] DATA_IHDR_CUNK_TYPE = new byte[] { (byte)'I', (byte)'H', (byte)'D', (byte)'R' };
+        public const int LENGTH_INTEGER_PER_BYTE = 4;
         static void Main(string[] args)
         {
-            Size size = Parse(args[0]);
+            Size size = SizeParser.Parse(args[0]);
             System.Console.WriteLine("PNG size [" + size.width + " ," + size.height + "]");
         }
         public static Size Parse(String filePath)
@@ -49,8 +50,7 @@ namespace PNGParser
             {
                 throw new NotPNGException("First bytes are wrong");
             }
-            byte[] actualIHDRSizeBytes = new byte[4];
-            Array.Copy(data, LENGTH_PNG_FILE_SIGNATURE, actualIHDRSizeBytes, 0, actualIHDRSizeBytes.Length);
+            byte[] actualIHDRSizeBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE, LENGTH_INTEGER_PER_BYTE);
             if (BitConverter.IsLittleEndian)
             {
                 Array.Reverse(actualIHDRSizeBytes);
@@ -60,17 +60,14 @@ namespace PNGParser
             {
                 throw new NotPNGException("IHDR size must be 13");
             }
-            byte[] actualIHDRChunkType = new byte[DATA_IHDR_CUNK_TYPE.Length];
-            Array.Copy(data, LENGTH_PNG_FILE_SIGNATURE + 4, actualIHDRChunkType, 0, actualIHDRChunkType.Length);
+            byte[] actualIHDRChunkType = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE + 4, DATA_IHDR_CUNK_TYPE.Length);
             if (!DATA_IHDR_CUNK_TYPE.SequenceEqual(actualIHDRChunkType))
             {
                 throw new NotPNGException("IHDR chunk type must be \"IHDR\"");
             }
-            byte[] widthBytes = new byte[4];
-            Array.Copy(data, LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length, widthBytes, 0, widthBytes.Length);
+            byte[] widthBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length, LENGTH_INTEGER_PER_BYTE);
 
-            byte[] heightBytes = new byte[4];
-            Array.Copy(data, LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length + widthBytes.Length, heightBytes, 0, heightBytes.Length);
+            byte[] heightBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length + widthBytes.Length, LENGTH_INTEGER_PER_BYTE);
 
             if (BitConverter.IsLittleEndian)
             {
@@ -78,9 +75,13 @@ namespace PNGParser
                 Array.Reverse(heightBytes);
             }
             return new Size(BitConverter.ToInt32(widthBytes, 0), BitConverter.ToInt32(heightBytes, 0));
-
         }
-
+        private static byte[] pullBytes(byte[] src, int offset, int length)
+        {
+            byte[] result = new byte[length];
+            Array.Copy(src, offset, result, 0, result.Length);
+            return result;
+        }
 
     }
     public class Size
