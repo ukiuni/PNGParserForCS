@@ -65,7 +65,6 @@ namespace PNGParser
                 throw new NotPNGException("IHDR chunk type must be \"IHDR\"");
             }
             byte[] widthBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length, LENGTH_INTEGER_PER_BYTE);
-
             byte[] heightBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length + widthBytes.Length, LENGTH_INTEGER_PER_BYTE);
 
             if (BitConverter.IsLittleEndian)
