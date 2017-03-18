@@ -44,8 +44,7 @@ namespace PNGParser
         }
         public static Size Parse(byte[] data)
         {
-            byte[] actualFirstBytes = new byte[LENGTH_PNG_FILE_SIGNATURE];
-            Array.Copy(data, 0, actualFirstBytes, 0, actualFirstBytes.Length);
+            byte[] actualFirstBytes = pullBytes(data, 0, LENGTH_PNG_FILE_SIGNATURE);
             if (!DATA_PNG_FILE_SIGNATURE.SequenceEqual(actualFirstBytes))
             {
                 throw new NotPNGException("First bytes are wrong");
