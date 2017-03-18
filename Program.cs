@@ -50,8 +50,7 @@ namespace PNGParser
             {
                 throw new NotPNGException("First bytes are wrong");
             }
-            byte[] actualIHDRSizeBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE, LENGTH_INTEGER_PER_BYTE);
-            
+            byte[] actualIHDRSizeBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE, LENGTH_INTEGER_PER_BYTE);            
             int actualIHDRSize = toInt(actualIHDRSizeBytes);
             if (13 != actualIHDRSize)
             {
