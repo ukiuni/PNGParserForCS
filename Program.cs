@@ -1,9 +1,10 @@
 ﻿/**
  * PNG Size Parser
  * Copyright (c) 2017 ukiuni
- * This software is released under the MIT License.
- * http://opensource.org/licenses/mit-license.php
-*/
+ * This software is released under public domain.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 /**
- * PNGデータからサイズを取得します。 フォーマットは http://www.setsuki.com/hsp/ext/png.htm を参照しました。
+ * load size from PNG. implement with refering http://www.setsuki.com/hsp/ext/png.htm .
  * 
  * @author ukiuni
  *
@@ -50,11 +51,8 @@ namespace PNGParser
                 throw new NotPNGException("First bytes are wrong");
             }
             byte[] actualIHDRSizeBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE, LENGTH_INTEGER_PER_BYTE);
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(actualIHDRSizeBytes);
-            }
-            int actualIHDRSize = BitConverter.ToInt32(actualIHDRSizeBytes, 0);
+            
+            int actualIHDRSize = toInt(actualIHDRSizeBytes);
             if (13 != actualIHDRSize)
             {
                 throw new NotPNGException("IHDR size must be 13");
@@ -67,18 +65,21 @@ namespace PNGParser
             byte[] widthBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length, LENGTH_INTEGER_PER_BYTE);
             byte[] heightBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length + widthBytes.Length, LENGTH_INTEGER_PER_BYTE);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(widthBytes);
-                Array.Reverse(heightBytes);
-            }
-            return new Size(BitConverter.ToInt32(widthBytes, 0), BitConverter.ToInt32(heightBytes, 0));
+            return new Size(toInt(widthBytes), toInt(heightBytes));
         }
         private static byte[] pullBytes(byte[] src, int offset, int length)
         {
             byte[] result = new byte[length];
             Array.Copy(src, offset, result, 0, result.Length);
             return result;
+        }
+        private static int toInt(byte[] src)
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(src);
+            }
+            return BitConverter.ToInt32(src, 0);
         }
 
     }
