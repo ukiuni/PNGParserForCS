@@ -25,6 +25,7 @@ namespace PNGParser
         private const int LENGTH_PNG_FILE_SIGNATURE = 8;
         private const int LENGTH_IHDR = 25;
         private static readonly byte[] DATA_IHDR_CUNK_TYPE = new byte[] { (byte)'I', (byte)'H', (byte)'D', (byte)'R' };
+        private static readonly byte[] DATA_IEND_CUNK_TYPE = new byte[] { (byte)'I', (byte)'E', (byte)'N', (byte)'D' };
         private const int LENGTH_INTEGER_PER_BYTE = 4;
         static void Main(string[] args)
         {
@@ -38,38 +39,51 @@ namespace PNGParser
             System.IO.FileMode.Open,
             System.IO.FileAccess.Read))
             {
-                byte[] data = new byte[LENGTH_PNG_FILE_SIGNATURE + LENGTH_IHDR];
-                fs.Read(data, 0, data.Length);
-                return Parse(data);
+                return Parse(fs);
             }
         }
-        public static Size Parse(byte[] data)
+        public static Size Parse(System.IO.Stream stream)
         {
-            byte[] actualFirstBytes = pullBytes(data, 0, LENGTH_PNG_FILE_SIGNATURE);
+            byte[] actualFirstBytes = pullBytes(stream, 0, LENGTH_PNG_FILE_SIGNATURE);
             if (!DATA_PNG_FILE_SIGNATURE.SequenceEqual(actualFirstBytes))
             {
                 throw new NotPNGException("First bytes are wrong");
             }
-            byte[] actualIHDRSizeBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE, LENGTH_INTEGER_PER_BYTE);            
-            int actualIHDRSize = toInt(actualIHDRSizeBytes);
-            if (13 != actualIHDRSize)
+            long currentIndex = 0;
+            while (true)
             {
-                throw new NotPNGException("IHDR size must be 13");
-            }
-            byte[] actualIHDRChunkType = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE + 4, DATA_IHDR_CUNK_TYPE.Length);
-            if (!DATA_IHDR_CUNK_TYPE.SequenceEqual(actualIHDRChunkType))
-            {
-                throw new NotPNGException("IHDR chunk type must be \"IHDR\"");
-            }
-            byte[] widthBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length, LENGTH_INTEGER_PER_BYTE);
-            byte[] heightBytes = pullBytes(data, LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length + widthBytes.Length, LENGTH_INTEGER_PER_BYTE);
+                byte[] actualIHDRSizeBytes = pullBytes(stream, currentIndex + LENGTH_PNG_FILE_SIGNATURE, LENGTH_INTEGER_PER_BYTE);
+                int actualIHDRSize = toInt(actualIHDRSizeBytes);
+                if (13 != actualIHDRSize)
+                {
+                    if (12 == actualIHDRSize)
+                    {
+                        byte[] actualIENDChunkType = pullBytes(stream, currentIndex + LENGTH_PNG_FILE_SIGNATURE + 4, DATA_IEND_CUNK_TYPE.Length);
+                        if (!DATA_IEND_CUNK_TYPE.SequenceEqual(actualIENDChunkType))
+                        {
+                            break;
+                        }
+                    }
+                    currentIndex += actualIHDRSize;
+                    continue;
+                }
+                byte[] actualIHDRChunkType = pullBytes(stream, currentIndex + LENGTH_PNG_FILE_SIGNATURE + 4, DATA_IHDR_CUNK_TYPE.Length);
+                if (!DATA_IHDR_CUNK_TYPE.SequenceEqual(actualIHDRChunkType))
+                {
+                    currentIndex += actualIHDRSize;
+                    continue;
+                }
+                byte[] widthBytes = pullBytes(stream, currentIndex + LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length, LENGTH_INTEGER_PER_BYTE);
+                byte[] heightBytes = pullBytes(stream, currentIndex + LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length + widthBytes.Length, LENGTH_INTEGER_PER_BYTE);
 
-            return new Size(toInt(widthBytes), toInt(heightBytes));
+                return new Size(toInt(widthBytes), toInt(heightBytes));
+            }
+            throw new NotPNGException("no IHDR");
         }
-        private static byte[] pullBytes(byte[] src, int offset, int length)
+        private static byte[] pullBytes(System.IO.Stream stream, long offset, int length)
         {
             byte[] result = new byte[length];
-            Array.Copy(src, offset, result, 0, result.Length);
+            stream.Read(result, 0, length);
             return result;
         }
         private static int toInt(byte[] src)
