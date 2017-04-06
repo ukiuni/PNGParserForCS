@@ -23,7 +23,6 @@ namespace PNGParser
     {
         private static readonly byte[] DATA_PNG_FILE_SIGNATURE = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
         private const int LENGTH_PNG_FILE_SIGNATURE = 8;
-        private const int LENGTH_IHDR = 25;
         private static readonly byte[] DATA_IHDR_CUNK_TYPE = new byte[] { (byte)'I', (byte)'H', (byte)'D', (byte)'R' };
         private static readonly byte[] DATA_IEND_CUNK_TYPE = new byte[] { (byte)'I', (byte)'E', (byte)'N', (byte)'D' };
         private const int LENGTH_INTEGER_PER_BYTE = 4;
