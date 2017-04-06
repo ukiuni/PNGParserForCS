@@ -81,7 +81,11 @@ namespace PNGParser
         private static byte[] pullBytes(System.IO.Stream stream, int length)
         {
             byte[] result = new byte[length];
-            stream.Read(result, 0, length);
+            int readed = stream.Read(result, 0, length);
+            if (0 == readed)
+            {
+                throw new NotPNGException("no IHDR");
+            }
             return result;
         }
         private static int toInt(byte[] src)
