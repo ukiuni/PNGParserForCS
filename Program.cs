@@ -27,6 +27,7 @@ namespace PNGParser
         private static readonly byte[] DATA_IHDR_CUNK_TYPE = new byte[] { (byte)'I', (byte)'H', (byte)'D', (byte)'R' };
         private static readonly byte[] DATA_IEND_CUNK_TYPE = new byte[] { (byte)'I', (byte)'E', (byte)'N', (byte)'D' };
         private const int LENGTH_INTEGER_PER_BYTE = 4;
+        private const int LENGTH_CRC = 4;
         static void Main(string[] args)
         {
             Size size = SizeParser.Parse(args[0]);
@@ -49,26 +50,19 @@ namespace PNGParser
             {
                 throw new NotPNGException("First bytes are wrong");
             }
-            long currentIndex = LENGTH_PNG_FILE_SIGNATURE;
             while (true)
             {
-                byte[] actualIHDRSizeBytes = pullBytes(stream, LENGTH_INTEGER_PER_BYTE);
-                int actualIHDRSize = toInt(actualIHDRSizeBytes);
-                if (13 != actualIHDRSize)
-                {
+                byte[] actualChunkSizeBytes = pullBytes(stream, LENGTH_INTEGER_PER_BYTE);
+                int actualIHDRSize = toInt(actualChunkSizeBytes);
 
-                    byte[] actualIENDChunkType = pullBytes(stream, DATA_IEND_CUNK_TYPE.Length);
-                    if (DATA_IEND_CUNK_TYPE.SequenceEqual(actualIENDChunkType))
-                    {
-                        break;
-                    }
-                    pullBytes(stream, actualIHDRSize + 4);
-                    continue;
-                }
-                byte[] actualIHDRChunkType = pullBytes(stream, DATA_IHDR_CUNK_TYPE.Length);
-                if (!DATA_IHDR_CUNK_TYPE.SequenceEqual(actualIHDRChunkType))
+                byte[] actualChunkType = pullBytes(stream, DATA_IHDR_CUNK_TYPE.Length);
+                if (!DATA_IHDR_CUNK_TYPE.SequenceEqual(actualChunkType))
                 {
-                    currentIndex += (4 + 4 + actualIHDRSize + 4);
+                    if (DATA_IEND_CUNK_TYPE.SequenceEqual(actualChunkType))
+                    {
+                        throw new NotPNGException("no IHDR");
+                    }
+                    pullBytes(stream, actualIHDRSize + LENGTH_CRC);
                     continue;
                 }
                 byte[] widthBytes = pullBytes(stream, LENGTH_INTEGER_PER_BYTE);
@@ -76,7 +70,6 @@ namespace PNGParser
 
                 return new Size(toInt(widthBytes), toInt(heightBytes));
             }
-            throw new NotPNGException("no IHDR");
         }
         private static byte[] pullBytes(System.IO.Stream stream, int length)
         {
@@ -84,7 +77,7 @@ namespace PNGParser
             int readed = stream.Read(result, 0, length);
             if (0 == readed)
             {
-                throw new NotPNGException("no IHDR");
+                throw new NotPNGException("File ended before found IHDR");
             }
             return result;
         }
