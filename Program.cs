@@ -25,6 +25,7 @@ namespace PNGParser
         private const int LENGTH_PNG_FILE_SIGNATURE = 8;
         private static readonly byte[] DATA_IHDR_CUNK_TYPE = new byte[] { (byte)'I', (byte)'H', (byte)'D', (byte)'R' };
         private static readonly byte[] DATA_IEND_CUNK_TYPE = new byte[] { (byte)'I', (byte)'E', (byte)'N', (byte)'D' };
+        private const int LENGTH_CHUNK_TYPE = 4;
         private const int LENGTH_INTEGER_PER_BYTE = 4;
         private const int LENGTH_CRC = 4;
         static void Main(string[] args)
@@ -54,7 +55,7 @@ namespace PNGParser
                 byte[] actualChunkSizeBytes = pullBytes(stream, LENGTH_INTEGER_PER_BYTE);
                 int actualChunkSize = toInt(actualChunkSizeBytes);
 
-                byte[] actualChunkType = pullBytes(stream, DATA_IHDR_CUNK_TYPE.Length);
+                byte[] actualChunkType = pullBytes(stream, LENGTH_CHUNK_TYPE);
                 if (!DATA_IHDR_CUNK_TYPE.SequenceEqual(actualChunkType))
                 {
                     if (DATA_IEND_CUNK_TYPE.SequenceEqual(actualChunkType))
