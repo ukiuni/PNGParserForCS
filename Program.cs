@@ -52,7 +52,7 @@ namespace PNGParser
             while (true)
             {
                 byte[] actualChunkSizeBytes = pullBytes(stream, LENGTH_INTEGER_PER_BYTE);
-                int actualIHDRSize = toInt(actualChunkSizeBytes);
+                int actualChunkSize = toInt(actualChunkSizeBytes);
 
                 byte[] actualChunkType = pullBytes(stream, DATA_IHDR_CUNK_TYPE.Length);
                 if (!DATA_IHDR_CUNK_TYPE.SequenceEqual(actualChunkType))
@@ -61,7 +61,7 @@ namespace PNGParser
                     {
                         throw new NotPNGException("no IHDR");
                     }
-                    pullBytes(stream, actualIHDRSize + LENGTH_CRC);
+                    pullBytes(stream, actualChunkSize + LENGTH_CRC);
                     continue;
                 }
                 byte[] widthBytes = pullBytes(stream, LENGTH_INTEGER_PER_BYTE);
