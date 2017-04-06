@@ -44,43 +44,41 @@ namespace PNGParser
         }
         public static Size Parse(System.IO.Stream stream)
         {
-            byte[] actualFirstBytes = pullBytes(stream, 0, LENGTH_PNG_FILE_SIGNATURE);
+            byte[] actualFirstBytes = pullBytes(stream, LENGTH_PNG_FILE_SIGNATURE);
             if (!DATA_PNG_FILE_SIGNATURE.SequenceEqual(actualFirstBytes))
             {
                 throw new NotPNGException("First bytes are wrong");
             }
-            long currentIndex = 0;
+            long currentIndex = LENGTH_PNG_FILE_SIGNATURE;
             while (true)
             {
-                byte[] actualIHDRSizeBytes = pullBytes(stream, currentIndex + LENGTH_PNG_FILE_SIGNATURE, LENGTH_INTEGER_PER_BYTE);
+                byte[] actualIHDRSizeBytes = pullBytes(stream, LENGTH_INTEGER_PER_BYTE);
                 int actualIHDRSize = toInt(actualIHDRSizeBytes);
                 if (13 != actualIHDRSize)
                 {
-                    if (12 == actualIHDRSize)
+
+                    byte[] actualIENDChunkType = pullBytes(stream, DATA_IEND_CUNK_TYPE.Length);
+                    if (DATA_IEND_CUNK_TYPE.SequenceEqual(actualIENDChunkType))
                     {
-                        byte[] actualIENDChunkType = pullBytes(stream, currentIndex + LENGTH_PNG_FILE_SIGNATURE + 4, DATA_IEND_CUNK_TYPE.Length);
-                        if (!DATA_IEND_CUNK_TYPE.SequenceEqual(actualIENDChunkType))
-                        {
-                            break;
-                        }
+                        break;
                     }
-                    currentIndex += actualIHDRSize;
+                    pullBytes(stream, actualIHDRSize + 4);
                     continue;
                 }
-                byte[] actualIHDRChunkType = pullBytes(stream, currentIndex + LENGTH_PNG_FILE_SIGNATURE + 4, DATA_IHDR_CUNK_TYPE.Length);
+                byte[] actualIHDRChunkType = pullBytes(stream, DATA_IHDR_CUNK_TYPE.Length);
                 if (!DATA_IHDR_CUNK_TYPE.SequenceEqual(actualIHDRChunkType))
                 {
-                    currentIndex += actualIHDRSize;
+                    currentIndex += (4 + 4 + actualIHDRSize + 4);
                     continue;
                 }
-                byte[] widthBytes = pullBytes(stream, currentIndex + LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length, LENGTH_INTEGER_PER_BYTE);
-                byte[] heightBytes = pullBytes(stream, currentIndex + LENGTH_PNG_FILE_SIGNATURE + actualIHDRSizeBytes.Length + DATA_IHDR_CUNK_TYPE.Length + widthBytes.Length, LENGTH_INTEGER_PER_BYTE);
+                byte[] widthBytes = pullBytes(stream, LENGTH_INTEGER_PER_BYTE);
+                byte[] heightBytes = pullBytes(stream, LENGTH_INTEGER_PER_BYTE);
 
                 return new Size(toInt(widthBytes), toInt(heightBytes));
             }
             throw new NotPNGException("no IHDR");
         }
-        private static byte[] pullBytes(System.IO.Stream stream, long offset, int length)
+        private static byte[] pullBytes(System.IO.Stream stream, int length)
         {
             byte[] result = new byte[length];
             stream.Read(result, 0, length);
